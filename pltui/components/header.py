@@ -1,23 +1,17 @@
-import os
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 
-from pulumi.automation import LocalWorkspace
-from textual.containers import HorizontalGroup, Vertical
+from textual.app import ComposeResult
+from textual.containers import Grid, Vertical
 from textual.reactive import reactive
-from textual.widgets import Label, Static
+from textual.widgets import Static
+
+try:
+    APP_VERSION = version("pltui")
+except PackageNotFoundError:
+    APP_VERSION = "dev"
 
 
-class AppHeader(HorizontalGroup):
-    LOGO = r""" ______   __         ______   __  __     __    
-/\  == \ /\ \       /\__  _\ /\ \/\ \   /\ \   
-\ \  _-/ \ \ \____  \/_/\ \/ \ \ \_\ \  \ \ \  
- \ \_\    \ \_____\    \ \_\  \ \_____\  \ \_\ 
-  \/_/     \/_____/     \/_/   \/_____/   \/_/ 
-"""
-
-    BORDER_TITLE = "PLTUI"
-    BORDER_SUBTITLE = f"the Pulumi terminal user interface - {version('pltui')}"
-
+class AppHeader(Vertical):
     project_name: reactive[str | None] = reactive(None)
     stack_name: reactive[str | None] = reactive(None)
 
@@ -27,24 +21,36 @@ class AppHeader(HorizontalGroup):
         width: 100%;
         background: $panel;
         color: $foreground;
-        height: 1;
+        height: 4;
     }
     """
 
-    def compose(self):
-
-        with Vertical(classes="header-box"):
-            yield Static(id="project-name")
-            yield Static(id="stack-name")
-
-        yield Static(self.LOGO, classes="header-box", id="logo-box")
+    def compose(self) -> ComposeResult:
+        with Grid(id="header-meta"):
+            yield Static("Project", classes="header-key")
+            yield Static(id="header-project", markup=False)
+            yield Static("Stack", classes="header-key")
+            yield Static(id="header-stack", markup=False)
 
     def on_mount(self) -> None:
-        self.query_one("#project-name", Static).update(f"Project: {self.project_name}")
-        self.query_one("#stack-name", Static).update(f"Stack: {self.stack_name}")
+        self.border_title = f"PLTUI v{APP_VERSION}"
+        self._render_project_name(self.project_name)
+        self._render_stack_name(self.stack_name)
 
-    def watch_project_name(self, project_name: str) -> None:
-        self.query_one("#project-name", Static).update(f"Project: {project_name}")
+    def watch_project_name(self, project_name: str | None) -> None:
+        self._render_project_name(project_name)
 
-    def watch_stack_name(self, stack_name: str) -> None:
-        self.query_one("#stack-name", Static).update(f"Stack: {stack_name}")
+    def watch_stack_name(self, stack_name: str | None) -> None:
+        self._render_stack_name(stack_name)
+
+    def _render_project_name(self, project_name: str | None) -> None:
+        if not self.is_mounted:
+            return
+        self.query_one("#header-project", Static).update(
+            project_name or "-"
+        )
+
+    def _render_stack_name(self, stack_name: str | None) -> None:
+        if not self.is_mounted:
+            return
+        self.query_one("#header-stack", Static).update(stack_name or "-")
