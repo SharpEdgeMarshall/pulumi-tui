@@ -2,27 +2,27 @@
 StateInspector {
   width: 100%;
   height: 1fr;
-  border: double $pl_border;
-  background: $pl_bg;
+  border: double $border;
+  background: $background;
   padding: 1 1 0 1;
   StateTree {
     width: 1fr;
     height: 1fr;
-    background: $pl_bg;
-    color: $pl_text;
+    background: $background;
+    color: $foreground;
     padding: 0 1;
-    border: round $pl_border;
-    border-title-color: $pl_muted;
+    border: round $border;
+    border-title-color: $secondary;
   }
 }
 
 AppHeader {
-  border: double $pl_border;
-  background: $pl_panel;
+  border: double $border;
+  background: $panel;
   height: 4;
   padding: 0 1;
   border-title-align: right;
-  border-title-color: $pl_gold;
+  border-title-color: $warning;
   border-title-style: bold;
 }
 
@@ -34,7 +34,7 @@ AppHeader {
 }
 
 .header-key {
-  color: $pl_muted;
+  color: $text-muted;
 }
 
 #header-project {
@@ -43,23 +43,39 @@ AppHeader {
 }
 
 #header-stack {
-  color: $pl_accent;
+  height: 1;
+  width: auto;
+  max-width: 100%;
+  background: $panel;
+  color: $secondary;
+}
+
+#header-stack > SelectCurrent {
+  width: auto;
+  max-width: 100%;
+  height: 1;
+  background: $panel;
+  color: $secondary;
+}
+
+#header-stack > SelectCurrent > #label {
+  width: auto;
+}
+
+#header-stack > SelectOverlay {
+  border: round $accent;
+  background: $surface;
 }
 
 ModalScreen {
   align: center middle;
-  #stacks {
-    width: 50%;
-    border: double $pl_border;
-    background: $pl_panel;
-  }
 }
 
 #resource-details {
   width: 95%;
   height: 95%;
-  border: double $pl_border;
-  background: $pl_panel;
+  border: double $border;
+  background: $panel;
   padding: 0 1;
 }
 
@@ -76,166 +92,210 @@ ModalScreen {
   grid-gutter: 0 1;
   display: none;
   padding: 0 1;
-  border: round $pl_border;
-  background: $pl_surface;
+  border: round $border;
+  background: $surface;
   height: 1fr;
   overflow-y: auto;
 }
 
 .summary-key {
   text-style: bold;
-  color: $pl_accent_soft;
+  color: $secondary;
 }
 
 .summary-value {
-  color: $pl_text;
+  color: $foreground;
 }
 
 #resource-view-tabs {
   height: 2;
-  background: $pl_panel;
+  background: $panel;
 }
 
 #resource-payload {
   height: 1fr;
-  border: round $pl_border;
-  background: $pl_bg;
-  color: $pl_text;
+  border: round $border;
+  background: $background;
+  color: $foreground;
+}
+
+#confirm-dialog {
+  width: 70;
+  height: auto;
+  max-height: 90%;
+  border: double $border;
+  background: $panel;
+  padding: 1 2;
+}
+
+#confirm-title {
+  text-style: bold;
+  margin-bottom: 1;
+}
+
+#confirm-message-scroll {
+  height: auto;
+  max-height: 20;
+  margin-bottom: 1;
+}
+
+#confirm-message {
+  height: auto;
+}
+
+#confirm-actions {
+  height: 3;
+  align-horizontal: right;
+}
+
+#confirm-actions Button {
+  width: auto;
+  margin-left: 1;
+}
+
+#confirm-actions Button.-error {
+  background: $error;
+  color: $background;
+}
+
+#action-run {
+  width: 95%;
+  height: 95%;
+  border: double $border;
+  border-title-color: $warning;
+  border-title-style: bold;
+  background: $panel;
+  padding: 0 1;
+}
+
+#action-run-status {
+  margin: 1 0;
+  padding-left: 1;
+}
+
+#action-run-status.-error {
+  color: $error;
+}
+
+#action-run-log {
+  height: 1fr;
+  border: round $border;
+  background: $background;
+  color: $foreground;
+}
+
+#action-run-buttons {
+  dock: bottom;
+  height: 3;
+  align-horizontal: right;
+}
+
+#action-run-buttons Button {
+  width: auto;
+  margin-left: 1;
+}
+
+#action-apply {
+  background: $error;
+  color: $background;
 }
 
 #state-filters {
   height: 3;
-  background: $pl_bg;
+  background: $background;
   margin-bottom: 1;
 }
 
 #state-tree-container {
   height: 1fr;
-  background: $pl_bg;
+  background: $background;
+}
+
+#resource-selection-actions {
+  width: auto;
+  height: 3;
+  background: $background;
+}
+
+#deselect-matching {
+  display: none;
+}
+
+#resource-selection-actions Button {
+  width: auto;
+  height: 3;
+  margin-left: 1;
 }
 
 #state-search {
   width: 1fr;
-  background: $pl_surface;
-  border: round $pl_border;
-  color: $pl_text;
+  background: $surface;
+  border: round $border;
+  color: $foreground;
   height: 3;
 }
 
 #state-search:focus {
-  border: round $pl_accent;
+  border: round $accent;
 }
 
 #state-type-filter {
-  width: 100%;
+  width: 34;
   height: 3;
-  background: $pl_panel;
+  margin-left: 1;
+  background: $background;
+}
+
+#state-protected-filter {
+  width: auto;
+  height: 3;
+  margin-left: 1;
+  padding: 0 1;
+  border: round $border;
+  background: $surface;
+}
+
+#state-protected-filter:focus {
+  border: round $accent;
 }
 
 #state-type-filter > SelectCurrent {
-  border: round $pl_border;
-  background: $pl_surface;
-  color: $pl_text;
+  border: round $border;
+  background: $surface;
+  color: $foreground;
   padding: 0 1;
 }
 
 #state-type-filter:focus > SelectCurrent {
-  border: round $pl_accent;
+  border: round $accent;
 }
 
 #state-type-filter > SelectOverlay {
-  border: round $pl_accent;
-  background: $pl_surface;
-  color: $pl_text;
+  border: round $accent;
+  background: $surface;
+  color: $foreground;
   padding: 0 1;
 }
-
-#toggle-filters {
-  width: auto;
-  min-width: 14;
-  height: 3;
-  margin-left: 1;
-  padding: 0 1;
-  background: $pl_surface;
-  border: round $pl_border;
-}
-
-#toggle-filters:focus {
-  border: round $pl_accent;
-}
-
-#toggle-filters:hover {
-  background: $pl_border;
-}
-
-#state-filter-panel {
-  display: none;
-  height: auto;
-  padding: 1;
-  margin-bottom: 1;
-  border: round $pl_border;
-  background: $pl_panel;
-}
-
-#state-filter-panel.-expanded {
-  display: block;
-}
-
-#state-type-label {
-  height: 1;
-  width: 100%;
-  background: $pl_panel;
-  color: $pl_muted;
-  margin-bottom: 1;
-}
-
-#switcher {
-  border: double lightblue;
-  border_title_align: center;
-}
-
-#tree {
-  background: $pl_bg;
-  color: $pl_text;
-}
-
 
 Screen {
-  background: $pl_bg;
-  color: $pl_text;
+  background: $background;
+  color: $foreground;
   overflow-y: hidden;
 }
 
-
 Button {
   width: 100%;
-  border: round $pl_border;
-  background: $pl_surface;
-  color: $pl_text;
+  border: round $border;
+  background: $surface;
+  color: $foreground;
 }
 
 Button:hover {
-  background: $pl_border;
+  background: $border;
 }
 
-Button.-primary {
-  background: $pl_accent;
-  color: $pl_bg;
-}
-
-
-#stacks-list {
-  grid-gutter: 1 2;
-  height: 8;
-  margin-bottom: 1;
-}
-
-
-#workspaces {
-  grid-size: 2;
-  padding: 1 2;
-  width: 30%;
-  max-height: 18;
-  border: thick $background 80%;
-  background: $pl_surface;
+Button:focus {
+  text-style: bold;
+  border: round $accent;
+  background-tint: transparent;
 }

@@ -1,0 +1,5 @@
+name: pltui-local
+description: Local-only development project for the PLTUI state explorer.
+runtime: python
+backend:
+  url: file://./.pulumi-state

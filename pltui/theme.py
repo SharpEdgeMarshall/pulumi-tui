@@ -1,6 +1,24 @@
 from textual.theme import Theme
 
 
+PULUMI_THEME = Theme(
+    name="pulumi",
+    primary="#8A3391",
+    secondary="#F26E7E",
+    warning="#F7BF2A",
+    error="#F26E7E",
+    success="#F7BF2A",
+    accent="#F7BF2A",
+    foreground="#EDE9F7",
+    background="#14101F",
+    surface="#221A36",
+    panel="#1B1529",
+    boost="#100C19",
+    dark=True,
+    luminosity_spread=0.12,
+    text_alpha=1.0,
+)
+
 PULUMI_SOFT_THEME = Theme(
     name="pulumi-soft",
     primary="#8A3391",
@@ -17,18 +35,4 @@ PULUMI_SOFT_THEME = Theme(
     dark=True,
     luminosity_spread=0.12,
     text_alpha=0.95,
-    variables={
-        "pl_bg": "#111827",
-        "pl_panel": "#1A2433",
-        "pl_surface": "#202C3E",
-        "pl_border": "#3A5678",
-        "pl_accent": "#4C92C8",
-        "pl_accent_soft": "#6F8FBD",
-        "pl_text": "#D7E2F0",
-        "pl_muted": "#8EA3BC",
-        "pl_violet": "#8A3391",
-        "pl_magenta": "#C7323F",
-        "pl_orange": "#F78C6B",
-        "pl_gold": "#F2D058",
-    },
 )

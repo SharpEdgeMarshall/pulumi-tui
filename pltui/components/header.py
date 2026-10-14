@@ -3,7 +3,7 @@ from importlib.metadata import PackageNotFoundError, version
 from textual.app import ComposeResult
 from textual.containers import Grid, Vertical
 from textual.reactive import reactive
-from textual.widgets import Static
+from textual.widgets import Select, Static
 
 try:
     APP_VERSION = version("pltui")
@@ -30,7 +30,15 @@ class AppHeader(Vertical):
             yield Static("Project", classes="header-key")
             yield Static(id="header-project", markup=False)
             yield Static("Stack", classes="header-key")
-            yield Static(id="header-stack", markup=False)
+            yield Select(
+                [("No stacks available", "")],
+                allow_blank=False,
+                value="",
+                prompt="No stacks",
+                id="header-stack",
+                compact=True,
+                disabled=True,
+            )
 
     def on_mount(self) -> None:
         self.border_title = f"PLTUI v{APP_VERSION}"
@@ -53,4 +61,16 @@ class AppHeader(Vertical):
     def _render_stack_name(self, stack_name: str | None) -> None:
         if not self.is_mounted:
             return
-        self.query_one("#header-stack", Static).update(stack_name or "-")
+        self.query_one("#header-stack", Select).value = (
+            stack_name if stack_name is not None else ""
+        )
+
+    def set_stacks(self, stacks: list[str], current: str | None) -> None:
+        selector = self.query_one("#header-stack", Select)
+        selector.set_options(
+            [(stack, stack) for stack in stacks] or [("No stacks available", "")]
+        )
+        selector.disabled = not stacks
+        selector.value = (
+            current if current in stacks else stacks[0] if stacks else ""
+        )

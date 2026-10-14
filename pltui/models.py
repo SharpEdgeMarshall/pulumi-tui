@@ -9,6 +9,7 @@ class PulumiResource(BaseModel):
     urn: str
     type: str
     id: Optional[str] = None
+    protect: bool = False
 
     parent_urn: Optional[str] = Field(alias="parent", default=None)
     parent_resource: Optional["PulumiResource"] = Field(
@@ -53,7 +54,7 @@ class PulumiStack(BaseModel):
 
     name: str
     root_resources: list[PulumiResource]
-    stack_resource: PulumiResource
+    stack_resource: Optional[PulumiResource] = None
 
     resources_by_urn: dict[str, PulumiResource]
 
@@ -62,8 +63,13 @@ class PulumiStack(BaseModel):
         """
         This is the core logic. It transforms the flat list of resources
         into a hierarchical tree and populates the helper dictionary.
+
+        ``data`` is ``{"name": <stack name>, "resources": [...]}``; a stack
+        without resources (e.g. after a destroy) is valid and empty.
         """
-        pending_resources = [PulumiResource.model_validate(res) for res in data]
+        pending_resources = [
+            PulumiResource.model_validate(res) for res in data["resources"]
+        ]
 
         # 1. Create a dictionary for fast URN lookups
         resources_by_urn = {res.urn: res for res in pending_resources}
@@ -95,13 +101,8 @@ class PulumiStack(BaseModel):
 
             pending_resources = next_pending
 
-        if not stack_resource:
-            raise ValueError("No stack resource found in the provided data.")
-
-        print("porcodio")
-
         return {
-            "name": stack_resource.name,
+            "name": data["name"],
             "root_resources": root_resources,
             "stack_resource": stack_resource,
             "resources_by_urn": resources_by_urn,

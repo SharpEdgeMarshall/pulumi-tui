@@ -3,13 +3,17 @@ from __future__ import annotations
 import json
 from difflib import unified_diff
 
+from rich.text import Text
+from textual import events
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Grid, Horizontal, Vertical
+from textual.message import Message
 from textual.reactive import reactive
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
+    Checkbox,
     Footer,
     Input,
     Label,
@@ -23,6 +27,7 @@ from textual.widgets import (
 from textual.widgets.tree import TreeNode
 
 from pltui.models import PulumiResource, PulumiStack
+from pltui.selection import ResourceSelection
 
 
 class ResourceDetails(ModalScreen[None]):
@@ -42,6 +47,12 @@ class ResourceDetails(ModalScreen[None]):
         self.inputs_payload = self._pretty_json(self.resource.inputs)
         self.outputs_payload = self._pretty_json(self.resource.properties)
         self.diff_payload: str | None = None
+
+    def on_click(self, event: events.Click) -> None:
+        # Clicks inside the dialog are handled by its widgets, so a click that
+        # lands on the screen itself is outside of it.
+        if event.widget is self:
+            self.dismiss(None)
 
     def _pretty_json(self, payload: object) -> str:
         return json.dumps(
@@ -67,9 +78,7 @@ class ResourceDetails(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="resource-details"):
-            yield Label(
-                self.resource.name, id="resource-details-label", markup=False
-            )
+            yield Label(self.resource.name, id="resource-details-label", markup=False)
             yield Tabs(
                 Tab("Overview", id="overview"),
                 Tab("Inputs", id="inputs"),
@@ -89,6 +98,10 @@ class ResourceDetails(ModalScreen[None]):
                 yield Static(self.resource.urn, classes="summary-value")
                 yield Static("Parent URN", classes="summary-key")
                 yield Static(self.resource.parent_urn or "-", classes="summary-value")
+                yield Static("Protected", classes="summary-key")
+                yield Static(
+                    "Yes" if self.resource.protect else "No", classes="summary-value"
+                )
                 yield Static("Dependencies", classes="summary-key")
                 yield Static(
                     str(len(self.resource.dependencies)), classes="summary-value"
@@ -169,45 +182,178 @@ class StateSearchInput(Input):
 
 class StateTree(Tree[PulumiResource]):
 
-    state: reactive[PulumiStack | None] = reactive(None)
-    query: reactive[str] = reactive("")
+    BINDINGS = [
+        Binding("space", "toggle_resource", "Select"),
+        Binding("e", "expand_cursor", "Expand/collapse resource"),
+        Binding("enter", "show_details", "View"),
+    ]
+
+    class DetailsRequested(Message):
+        def __init__(self, resource: PulumiResource) -> None:
+            super().__init__()
+            self.resource = resource
+
+    class SelectionChanged(Message):
+        def __init__(
+            self,
+            selected_urns: frozenset[str],
+            matching_urns: frozenset[str],
+            selecting: bool,
+        ) -> None:
+            super().__init__()
+            self.selected_urns = selected_urns
+            self.matching_urns = matching_urns
+            self.selecting = selecting
+
+    state: reactive[PulumiStack | None] = reactive(None, always_update=True)
+    search_query: reactive[str] = reactive("")
     resource_type: reactive[str] = reactive("")
+    protected_only: reactive[bool] = reactive(False)
 
     def __init__(self, *args, **kwargs):
+        self.selection = ResourceSelection()
+        self.resource_nodes: dict[str, TreeNode[PulumiResource]] = {}
         super().__init__(*args, **kwargs)
         self.show_root = False
+        self.auto_expand = False
         self.guide_depth = 3
         self.root.data = None
+
+    @property
+    def selecting(self) -> bool:
+        """Multi-selection is active as soon as one resource is selected."""
+        return bool(self.selection.urns)
 
     def watch_state(self, state: PulumiStack | None) -> None:
         self.rebuild_tree()
 
-    def watch_query(self, query: str) -> None:
+    def watch_search_query(self, query: str) -> None:
         self.rebuild_tree()
 
     def watch_resource_type(self, resource_type: str) -> None:
         self.rebuild_tree()
 
+    def watch_protected_only(self, protected_only: bool) -> None:
+        self.rebuild_tree()
+
+    @property
+    def matching_urns(self) -> frozenset[str]:
+        if self.state is None:
+            return frozenset()
+        return frozenset(
+            resource.urn
+            for resource in self.state.resources_by_urn.values()
+            if self._matches_filters(
+                resource, self.search_query.strip(), self.resource_type
+            )
+        )
+
+    @property
+    def selected_resources(self) -> tuple[PulumiResource, ...]:
+        if self.state is None:
+            return ()
+        return tuple(
+            resource
+            for urn, resource in self.state.resources_by_urn.items()
+            if urn in self.selection.urns
+        )
+
+    def select_matching(self) -> None:
+        self.selection.select(self.matching_urns)
+        self._update_selection()
+
+    def deselect_matching(self) -> None:
+        self.selection.deselect(self.matching_urns)
+        self._update_selection()
+
+    def toggle_resource(self, resource: PulumiResource) -> None:
+        if resource.urn not in self.matching_urns:
+            self.notify(
+                "This parent is shown for context and does not match the filters.",
+                title="Resource selection",
+            )
+            return
+        self.selection.toggle(resource.urn)
+        self._update_selection()
+
+    def action_toggle_resource(self) -> None:
+        if self.cursor_node and self.cursor_node.data:
+            self.toggle_resource(self.cursor_node.data)
+
+    def action_show_details(self) -> None:
+        if self.cursor_node and self.cursor_node.data:
+            self.post_message(self.DetailsRequested(self.cursor_node.data))
+
+    def on_click(self, event: events.Click) -> None:
+        meta = event.style.meta
+        if event.chain != 2 or "line" not in meta or meta.get("toggle", False):
+            return
+        node = self.get_node_at_line(meta["line"])
+        if node is not None and node.data:
+            event.stop()
+            self.post_message(self.DetailsRequested(node.data))
+
+    def action_expand_cursor(self) -> None:
+        super().action_toggle_node()
+
+    def _resource_label(self, resource: PulumiResource) -> Text:
+        label = f"{resource.type} ({resource.name})"
+        if resource.protect:
+            lock = self.app.get_css_variables()["secondary"].removeprefix("ansi_")
+            label = Text.assemble(label, (" 🔒", lock))
+        else:
+            label = Text(label)
+        if not self.selecting:
+            return label
+        if not self._matches_filters(
+            resource, self.search_query.strip(), self.resource_type
+        ):
+            return Text.assemble("    ", label)
+        if resource.urn in self.selection.urns:
+            color = self.app.get_css_variables()["secondary"].removeprefix("ansi_")
+            return Text.assemble(("[x] ", f"bold {color}"), label)
+        return Text.assemble("[ ] ", label)
+
+    def _update_selection(self) -> None:
+        matching_urns = self.matching_urns
+        total = len(self.state.resources_by_urn) if self.state else 0
+        title = (
+            f"Resources: {len(matching_urns)} of {total}"
+            if self.search_query.strip() or self.resource_type or self.protected_only
+            else f"Resources: {total}"
+        )
+        if self.selecting:
+            title += f" | Selected: {len(self.selection.urns)}"
+            hidden = len(self.selection.urns - matching_urns)
+            if hidden:
+                title += f" ({hidden} hidden)"
+        self.border_title = title
+        for node in self.resource_nodes.values():
+            if node.data is not None:
+                node.set_label(self._resource_label(node.data))
+        self.post_message(
+            self.SelectionChanged(
+                frozenset(self.selection.urns), matching_urns, self.selecting
+            )
+        )
+        self.refresh_bindings()
+
     def rebuild_tree(self) -> None:
         self.loading = True
         self.clear()
-        query = self.query.strip()
-        resources = self.state.resources_by_urn.values() if self.state else ()
-        total = len(self.state.resources_by_urn) if self.state else 0
-        matching = sum(
-            self._matches_filters(resource, query, self.resource_type)
-            for resource in resources
+        self.resource_nodes.clear()
+        self.selection.reconcile(
+            self.state.name if self.state else None,
+            self.state.resources_by_urn if self.state else (),
         )
-        self.border_title = (
-            f"Resources: {matching} of {total}"
-            if query or self.resource_type else f"Resources: {total}"
-        )
+        query = self.search_query.strip()
         if self.state:
             self.load_tree(
                 self.root, self.state.root_resources, query, self.resource_type
             )
             self.root.expand()
         self.loading = False
+        self._update_selection()
 
     def _matches_query(self, resource: PulumiResource, query: str) -> bool:
         q = query.lower()
@@ -227,6 +373,7 @@ class StateTree(Tree[PulumiResource]):
     ) -> bool:
         return (
             (not resource_type or resource.type == resource_type)
+            and (not self.protected_only or resource.protect)
             and (not query or self._matches_query(resource, query))
         )
 
@@ -251,7 +398,7 @@ class StateTree(Tree[PulumiResource]):
             if not self._should_include(resource, query, resource_type):
                 continue
 
-            label = f"{resource.type} ({resource.name})"
+            label = self._resource_label(resource)
             matching_children = [
                 child
                 for child in resource.children
@@ -259,41 +406,68 @@ class StateTree(Tree[PulumiResource]):
             ]
 
             if matching_children:
-                resource_node = parent_node.add(
-                    label, expand=bool(query or resource_type)
-                )
+                resource_node = parent_node.add(label, expand=True)
                 resource_node.data = resource
                 self.load_tree(resource_node, matching_children, query, resource_type)
             else:
                 resource_node = parent_node.add_leaf(label)
                 resource_node.data = resource
+            self.resource_nodes[resource.urn] = resource_node
 
 
 class StateInspector(Vertical):
 
-    state: reactive[PulumiStack | None] = reactive(None)
-    filters_expanded: reactive[bool] = reactive(False)
+    BINDINGS = [
+        Binding("a", "select_all", "Select all"),
+        Binding("d", "deselect_all", "Deselect all"),
+    ]
 
-    DEFAULT_CSS = """
+    state: reactive[PulumiStack | None] = reactive(None, always_update=True)
 
-    """
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        # Mirrors the enabled state of the Select all / Deselect all buttons.
+        if action not in {"select_all", "deselect_all"}:
+            return True
+        trees = self.query(StateTree)
+        if not trees:
+            return None
+        tree = trees.first()
+        if action == "select_all":
+            return True if tree.matching_urns - tree.selection.urns else None
+        return True if tree.matching_urns & tree.selection.urns else None
+
+    def action_select_all(self) -> None:
+        self.query_one(StateTree).select_matching()
+
+    def action_deselect_all(self) -> None:
+        self.query_one(StateTree).deselect_matching()
 
     def compose(self):
         with Horizontal(id="state-filters"):
             yield StateSearchInput(placeholder="Search resources...", id="state-search")
-            yield Button(
-                "▶ Filters",
-                id="toggle-filters",
-                tooltip="Show or hide resource filters",
-            )
-        with Vertical(id="state-filter-panel"):
-            yield Label("Resource type", id="state-type-label")
             yield Select(
                 [("All resource types", "")],
                 allow_blank=False,
                 value="",
                 id="state-type-filter",
+                tooltip="Filter by resource type",
             )
+            yield Checkbox(
+                "Protected only",
+                id="state-protected-filter",
+                tooltip="Show only protected resources",
+            )
+            with Horizontal(id="resource-selection-actions"):
+                yield Button(
+                    "Select all",
+                    id="select-matching",
+                    tooltip="Select all resources matching the current filters (A)",
+                )
+                yield Button(
+                    "Deselect all",
+                    id="deselect-matching",
+                    tooltip="Deselect all resources matching the current filters (D)",
+                )
         with Horizontal(id="state-tree-container"):
             yield StateTree(
                 label="Root",
@@ -302,26 +476,30 @@ class StateInspector(Vertical):
 
     def on_mount(self) -> None:
         self._update_resource_types()
-        self._render_filter_panel()
 
-    def watch_filters_expanded(self, expanded: bool) -> None:
-        if self.is_mounted:
-            self._render_filter_panel()
-
-    def _render_filter_panel(self) -> None:
-        self.query_one("#state-filter-panel").set_class(
-            self.filters_expanded, "-expanded"
-        )
-        selected = self.query_one("#state-type-filter", Select).value
-        active_count = 1 if isinstance(selected, str) and selected else 0
-        arrow = "▼" if self.filters_expanded else "▶"
-        count = f" ({active_count})" if active_count else ""
-        self.query_one("#toggle-filters", Button).label = f"{arrow} Filters{count}"
+    def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
+        if event.checkbox.id == "state-protected-filter":
+            event.stop()
+            self.query_one("#state-tree", StateTree).protected_only = event.value
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "toggle-filters":
+        if event.button.id in {"select-matching", "deselect-matching"}:
             event.stop()
-            self.filters_expanded = not self.filters_expanded
+            tree = self.query_one(StateTree)
+            if event.button.id == "select-matching":
+                tree.select_matching()
+            else:
+                tree.deselect_matching()
+
+    def on_state_tree_selection_changed(
+        self, event: StateTree.SelectionChanged
+    ) -> None:
+        self.query_one("#select-matching", Button).disabled = (
+            not event.matching_urns - event.selected_urns
+        )
+        deselect = self.query_one("#deselect-matching", Button)
+        deselect.display = event.selecting
+        deselect.disabled = not event.matching_urns & event.selected_urns
 
     def watch_state(self, state: PulumiStack | None) -> None:
         if self.is_mounted:
@@ -332,7 +510,8 @@ class StateInspector(Vertical):
         selected = type_filter.value
         resource_types = sorted(
             {resource.type for resource in self.state.resources_by_urn.values()}
-            if self.state else set()
+            if self.state
+            else set()
         )
         resource_type = (
             selected if isinstance(selected, str) and selected in resource_types else ""
@@ -342,24 +521,22 @@ class StateInspector(Vertical):
         )
         type_filter.value = resource_type
         self.query_one("#state-tree", StateTree).resource_type = resource_type
-        self._render_filter_panel()
 
     def on_select_changed(self, event: Select.Changed) -> None:
         if event.select.id == "state-type-filter" and isinstance(event.value, str):
             self.query_one("#state-tree", StateTree).resource_type = event.value
-            self._render_filter_panel()
 
     def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id != "state-search":
             return
         tree = self.query_one("#state-tree", StateTree)
-        tree.query = event.value.strip()
+        tree.search_query = event.value.strip()
 
     def action_focus_search(self) -> None:
         self.query_one("#state-search", StateSearchInput).focus()
 
-    def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
-        if not event.node.data:
-            return
-
-        self.app.push_screen(ResourceDetails(event.node.data))
+    def on_state_tree_details_requested(
+        self, event: StateTree.DetailsRequested
+    ) -> None:
+        event.stop()
+        self.app.push_screen(ResourceDetails(event.resource))

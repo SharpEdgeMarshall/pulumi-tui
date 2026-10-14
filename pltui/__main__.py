@@ -1,4 +1,3 @@
-import re
 
 from pltui.app import PulumiTUI
 
