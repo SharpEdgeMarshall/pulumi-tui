@@ -31,10 +31,10 @@ class AppHeader(Vertical):
             yield Static(id="header-project", markup=False)
             yield Static("Stack", classes="header-key")
             yield Select(
-                [("No stacks available", "")],
+                [("Loading stacks...", "loading")],
                 allow_blank=False,
-                value="",
-                prompt="No stacks",
+                value="loading",
+                prompt="Loading stacks",
                 id="header-stack",
                 compact=True,
                 disabled=True,

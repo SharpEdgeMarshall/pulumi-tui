@@ -1,7 +1,7 @@
 [project]
 name = "pulumi-tui"
 version = "0.1.0"
-description = "Pulumi Textual User Interface"
+description = "Pulumi Terminal User Interface"
 authors = [{ name = "Fabio Todaro", email = "fbregist@gmail.com" }]
 license = "Apache-2.0"
 readme = "README.md"
@@ -12,6 +12,12 @@ dependencies = [
     "pulumi (>=3.203.0,<4.0.0)",
     "click (>=8.1,<9)",
 ]
+
+[project.urls]
+Homepage = "https://github.com/SharpEdgeMarshall/pulumi-tui"
+Repository = "https://github.com/SharpEdgeMarshall/pulumi-tui"
+Issues = "https://github.com/SharpEdgeMarshall/pulumi-tui/issues"
+Changelog = "https://github.com/SharpEdgeMarshall/pulumi-tui/releases"
 
 [tool.poetry]
 packages = [{ include = "pltui" }]
