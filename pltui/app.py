@@ -108,29 +108,25 @@ class PulumiTUI(App):
         yield AppFooter(id="footer")
 
     def on_mount(self) -> None:
-        self._initialize_service()
         self.action_reload_stacks()
 
-    def _initialize_service(self) -> bool:
-        try:
-            self.pulumi_service.setup(self.project_dir)
-            project_name = self.pulumi_service.project_name
-        except Exception as exc:
-            self.query_one(AppFooter).set_status("Workspace unavailable")
-            self.notify(
-                f"Cannot load Pulumi project at {self.project_dir}: {exc!s}. "
-                "Use -C/--cwd to choose a Pulumi project and Ctrl+R to retry.",
-                title="Workspace unavailable",
-                severity="error",
-                markup=False,
-            )
-            return False
-        self.query_one(AppHeader).project_name = project_name
-        return True
+    def _set_loading(self, loading: bool) -> None:
+        self.query_one("#state-tree-container").loading = loading
 
     @work(exclusive=True, thread=True)
     async def update_stacks(self) -> None:
         worker = get_current_worker()
+
+        try:
+            if not self.pulumi_service.ready:
+                self.pulumi_service.setup(self.project_dir)
+                project_name = self.pulumi_service.project_name
+                if not worker.is_cancelled:
+                    self.call_from_thread(self.set_project_name, project_name)
+        except Exception as exc:
+            if not worker.is_cancelled:
+                self.call_from_thread(self.handle_workspace_error, str(exc))
+            return
 
         try:
             stack_names = self.pulumi_service.list_stacks()
@@ -142,17 +138,27 @@ class PulumiTUI(App):
         if not worker.is_cancelled:
             self.call_from_thread(self.set_stacks, stack_names)
 
+    def set_project_name(self, project_name: str) -> None:
+        self.query_one(AppHeader).project_name = project_name
+
+    def handle_workspace_error(self, error: str) -> None:
+        self._set_loading(False)
+        self.query_one(AppHeader).set_stacks([], None)
+        self.query_one(AppFooter).set_status("Workspace unavailable")
+        self.notify(
+            f"Cannot load Pulumi project at {self.project_dir}: {error}. "
+            "Use -C/--cwd to choose a Pulumi project.",
+            title="Workspace unavailable",
+            severity="error",
+            markup=False,
+        )
+
     @work(exclusive=True, thread=True)
     async def load_state(self, stack_name: str) -> None:
         worker = get_current_worker()
-        if self.pulumi_service is None:
-            self.call_from_thread(
-                self.handle_state_load_error,
-                stack_name,
-                "No Pulumi workspace initialized.",
-            )
-            return
         try:
+            if self.pulumi_service.stack_name != stack_name:
+                self.pulumi_service.select_stack(stack_name)
             state = self.pulumi_service.get_state()
         except Exception as exc:
             if not worker.is_cancelled:
@@ -167,6 +173,7 @@ class PulumiTUI(App):
     def action_reload_stacks(self) -> None:
         """Reload the list of stacks."""
         self.query_one(AppFooter).set_status("Loading stacks")
+        self._set_loading(True)
         self.update_stacks()
 
     def on_select_changed(self, event: Select.Changed) -> None:
@@ -190,6 +197,7 @@ class PulumiTUI(App):
             return
 
         self.query_one(AppFooter).set_status("Loading state")
+        self._set_loading(True)
         self.load_state(self.stack_name)
 
     def action_refresh_stack(self) -> None:
@@ -308,6 +316,7 @@ class PulumiTUI(App):
             self.stack_name = None
             self.state = None
             self.query_one(AppHeader).set_stacks(self.stacks, self.stack_name)
+            self._set_loading(False)
             footer.set_status("No stacks")
             self.notify(
                 "No stacks found for this project.",
@@ -323,6 +332,7 @@ class PulumiTUI(App):
         if self.stack_name != selected_stack:
             self.stack_name = selected_stack
         else:
+            self._set_loading(False)
             footer.set_status("Ready")
         self.notify("Success!", title="Stacks loaded", severity="information")
 
@@ -330,20 +340,22 @@ class PulumiTUI(App):
         if not stack_name:
             return
 
-        self.pulumi_service.select_stack(stack_name)
-
         self.query_one(AppHeader).stack_name = stack_name
         footer = self.query_one(AppFooter)
         footer.set_status("Loading state")
+        self._set_loading(True)
         self.load_state(stack_name)
 
     def set_state(self, state: PulumiStack) -> None:
         self.state = state
+        self._set_loading(False)
         footer = self.query_one(AppFooter)
         footer.set_status("Ready")
         self.notify("Success!", title="Stack loaded", severity="information")
 
     def handle_stack_load_error(self, error: str) -> None:
+        self._set_loading(False)
+        self.query_one(AppHeader).set_stacks([], None)
         self.query_one(AppFooter).set_status("Error loading stacks")
         self.notify(
             error,
@@ -352,6 +364,7 @@ class PulumiTUI(App):
         )
 
     def handle_state_load_error(self, stack_name: str, error: str) -> None:
+        self._set_loading(False)
         self.query_one(AppFooter).set_status("Error loading state")
         self.notify(
             f"Unable to load state for '{stack_name}': {error}",

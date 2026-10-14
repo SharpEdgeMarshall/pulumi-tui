@@ -1,8 +1,10 @@
 import hashlib
 import json
+import os
 from enum import Enum
 from typing import Any, Callable, Optional, Sequence
 
+import yaml  # type: ignore[import-untyped]
 from pulumi.automation import LocalWorkspace, PulumiCommand, Stack
 
 from .models import PulumiStack, PulumiStackExport
@@ -35,29 +37,68 @@ _STATE_ACTIONS = (
 
 
 class PulumiService:
-    def __init__(self):
-        self.cmd = PulumiCommand.install()
+    def __init__(self) -> None:
+        self._cmd: Optional[PulumiCommand] = None
+        self._workspace: Optional[LocalWorkspace] = None
+        self.stack_name: Optional[str] = None
+
+    @property
+    def ready(self) -> bool:
+        return self._workspace is not None
+
+    @property
+    def cmd(self) -> PulumiCommand:
+        if self._cmd is None:
+            raise RuntimeError("The Pulumi CLI is not available.")
+        return self._cmd
+
+    @property
+    def workspace(self) -> LocalWorkspace:
+        if self._workspace is None:
+            raise RuntimeError("No Pulumi workspace initialized.")
+        return self._workspace
 
     @property
     def project_name(self) -> str:
-        return self.workspace.project_settings().name
+        try:
+            return self.workspace.project_settings().name
+        except Exception:
+            # The SDK parser crashes on some valid Pulumi.yaml files (e.g. an
+            # empty `template.config`); only the name is needed here.
+            return self._read_project_name()
 
-    def setup(self, project_dir: str):
+    def _read_project_name(self) -> str:
+        for ext in (".yaml", ".yml", ".json"):
+            path = os.path.join(self.project_dir, f"Pulumi{ext}")
+            if not os.path.exists(path):
+                continue
+            with open(path, encoding="utf-8") as file:
+                settings = json.load(file) if ext == ".json" else yaml.safe_load(file)
+            if isinstance(settings, dict) and settings.get("name"):
+                return str(settings["name"])
+            break
+        raise RuntimeError(
+            f"No project name found in Pulumi.yaml at {self.project_dir}"
+        )
+
+    def setup(self, project_dir: str) -> None:
+        """Slow: runs the Pulumi CLI. Call it from a worker thread."""
         self.project_dir = project_dir
-        self.workspace = LocalWorkspace(work_dir=project_dir)
-        self.stack = self.workspace.stack()
+        self.stack_name = None
+        self._cmd = PulumiCommand.install()
+        self._workspace = LocalWorkspace(work_dir=project_dir, pulumi_command=self._cmd)
 
     def list_stacks(self) -> list[str]:
         return [stack.name for stack in self.workspace.list_stacks()]
 
     def select_stack(self, stack_name: str):
         self.workspace.select_stack(stack_name=stack_name)
-        self.stack = self.workspace.stack()
+        self.stack_name = stack_name
 
     def _selected_stack_name(self) -> str:
-        if self.stack is None:
+        if self.stack_name is None:
             raise RuntimeError("No stack is currently selected.")
-        return self.stack.name
+        return self.stack_name
 
     def get_state(self) -> PulumiStack:
         stack_name = self._selected_stack_name()
