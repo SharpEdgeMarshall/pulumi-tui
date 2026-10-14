@@ -1,10 +1,16 @@
 
-<h1 align="center">PLTUI</h1>
+<h1 align="center">PLTUI - The Pulumi Terminal UI</h1>
 
 <p align="center">
   A terminal UI to explore and operate on your Pulumi stacks.<br>
   Built with <a href="https://textual.textualize.io">Textual</a> and the Pulumi Automation API.
 </p>
+
+[![PyPI version](https://img.shields.io/pypi/v/pulumi-tui?style=for-the-badge)](https://pypi.org/project/pulumi-tui/)
+[![CI](https://img.shields.io/github/actions/workflow/status/SharpEdgeMarshall/pulumi-tui/test.yml?style=for-the-badge
+)](https://github.com/SharpEdgeMarshall/pulumi-tui/actions/workflows/test.yml)
+![License](https://img.shields.io/github/license/SharpEdgeMarshall/pulumi-tui?style=for-the-badge)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/pulumi-tui?style=for-the-badge)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/SharpEdgeMarshall/pulumi-tui/main/docs/preview.svg" alt="PLTUI previewing a Pulumi stack" width="100%">
@@ -23,32 +29,20 @@
 
 ## Install
 
-### Requirements
+The package `pulumi-tui` provides the `pltui` command.
 
-- Python 3.11 or newer
-- The [Pulumi CLI](https://www.pulumi.com/docs/iac/download-install/)
+| Tool   | Install                    | Upgrade                       | Run                                      |
+| ------ | -------------------------- | ----------------------------- | ---------------------------------------- |
+| pipx   | `pipx install pulumi-tui`  | `pipx upgrade pulumi-tui`     | `cd /path/to/pulumi/project && pltui`    |
+| uv     | `uv tool install pulumi-tui` | `uv tool upgrade pulumi-tui` | `cd /path/to/pulumi/project && pltui`    |
+| uvx    | none (no install needed)   | n/a                           | `uvx --from pulumi-tui pltui`            |
+| Source | `git clone https://github.com/SharpEdgeMarshall/pulumi-tui.git && cd pulumi-tui && poetry install` | `git pull && poetry install` | `poetry run pltui` |
 
-### As a command (recommended)
+Requires Python 3.11 or newer.
 
-Install `pulumi-tui` (which provides the `pltui` command) in its own isolated environment, using [pipx](https://pipx.pypa.io) or [uv](https://docs.astral.sh/uv/):
+Doesn't require pulumi, it's auto installed.
 
-```bash
-pipx install pulumi-tui
-# or
-uv tool install pulumi-tui
-```
-
-Upgrade with `pipx upgrade pulumi-tui` or `uv tool upgrade pulumi-tui`. To try it without installing, run `uvx --from pulumi-tui pltui`.
-
-### From source
-
-Requires [Poetry](https://python-poetry.org/docs/#installation).
-
-```bash
-git clone https://github.com/SharpEdgeMarshall/pulumi-tui.git
-cd pulumi-tui
-poetry install
-```
+Building from source requires [Poetry](https://python-poetry.org/docs/#installation).
 
 ## Usage
 
@@ -96,15 +90,6 @@ Choose a stack with the dropdown in the header, then explore its resources.
 | `E` | Expand or collapse the focused branch |
 | `Enter` or double-click | Open the resource details |
 
-**Modals**
-
-| Key | Action |
-|---|---|
-| `Y` | Confirm |
-| `T` | Toggle "Target dependents" |
-| `A` / `R` | Apply / re-preview |
-| `Esc` | Cancel or close |
-
 
 ### Resource selection
 
@@ -117,17 +102,12 @@ Selection survives reloads of the same stack, dropping resources that no longer 
 `examples/local` is a real Pulumi Python project on a local filesystem backend. It creates only component resources, so no cloud credentials, providers or billable infrastructure are needed.
 
 ```bash
-poetry install
-mkdir -p examples/local/.pulumi-state
-export PULUMI_CONFIG_PASSPHRASE=''
-poetry run pulumi -C examples/local stack init dev
-poetry run pulumi -C examples/local up --yes
-poetry run pulumi -C examples/local stack init sandbox
-poetry run pulumi -C examples/local up --yes
-poetry run pltui -C examples/local
+make setup         # install dependencies
+make example-init  # create the dev and sandbox stacks with sample state
+make run           # open pltui against the example project
 ```
 
-The empty passphrase is only for this non-sensitive example. Backend files and stack configuration are ignored by Git. Run `stack init` once per stack; afterwards use `stack select dev` or `stack select sandbox` before `up`.
+`make example-init` is safe to re-run. Use `make example-clean` to remove the local state and start over.
 
 ## Contributing
 
