@@ -3,8 +3,7 @@ from typing import Optional
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Grid, Horizontal, Vertical
-from textual.message import Message
+from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, OptionList, Static
 
@@ -22,11 +21,11 @@ class StackSelectModal(ModalScreen[str | None]):
 
     def compose(self) -> ComposeResult:
         question = Static(
-            Text("Select stack to switch to:\n", "bold"),
+            Text(f"Select stack to switch to ({len(self.stacks)} available):\n", "bold"),
             id="question",
         )
         options = OptionList(*self.stacks, id="stacks-list")
-        if self.current:
+        if self.current and self.current in self.stacks:
             options.highlighted = self.stacks.index(self.current)
         yield Vertical(
             question,
@@ -35,6 +34,10 @@ class StackSelectModal(ModalScreen[str | None]):
             id="stacks",
         )
 
+    def action_refresh_stacks(self) -> None:
+        self.app.action_refresh_stacks()
+        self.dismiss(None)
+
     def on_key(self, event) -> None:
         options = self.query_one("#stacks-list", OptionList)
 
@@ -42,3 +45,14 @@ class StackSelectModal(ModalScreen[str | None]):
             self.dismiss(self.stacks[options.highlighted])
         elif event.key == "escape":
             self.dismiss(None)
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id != "ok":
+            return
+
+        options = self.query_one("#stacks-list", OptionList)
+        if options.highlighted is None:
+            self.dismiss(None)
+            return
+
+        self.dismiss(self.stacks[options.highlighted])
