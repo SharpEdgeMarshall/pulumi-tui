@@ -13,6 +13,12 @@ dependencies = [
     "click (>=8.1,<9)",
 ]
 
+[project.urls]
+Homepage = "https://github.com/SharpEdgeMarshall/pulumi-tui"
+Repository = "https://github.com/SharpEdgeMarshall/pulumi-tui"
+Issues = "https://github.com/SharpEdgeMarshall/pulumi-tui/issues"
+Changelog = "https://github.com/SharpEdgeMarshall/pulumi-tui/releases"
+
 [tool.poetry]
 packages = [{ include = "pltui" }]
 
