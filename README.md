@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/preview.svg" alt="PLTUI previewing a Pulumi stack" width="100%">
+  <img src="https://raw.githubusercontent.com/SharpEdgeMarshall/pulumi-tui/main/docs/preview.svg" alt="PLTUI previewing a Pulumi stack" width="100%">
 </p>
 
 ## Features
@@ -131,8 +131,8 @@ The empty passphrase is only for this non-sensitive example. Backend files and s
 
 ## Contributing
 
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, project layout and conventions.
+Contributions are welcome. See [CONTRIBUTING.md](https://github.com/SharpEdgeMarshall/pulumi-tui/blob/main/CONTRIBUTING.md) for setup, project layout and conventions.
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+Apache-2.0. See [LICENSE](https://github.com/SharpEdgeMarshall/pulumi-tui/blob/main/LICENSE).

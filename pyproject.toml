@@ -1,7 +1,7 @@
 [project]
 name = "pulumi-tui"
 version = "0.1.0"
-description = "Pulumi Textual User Interface"
+description = "Pulumi Terminal User Interface"
 authors = [{ name = "Fabio Todaro", email = "fbregist@gmail.com" }]
 license = "Apache-2.0"
 readme = "README.md"
