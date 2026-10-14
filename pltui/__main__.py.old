@@ -1,0 +1,36 @@
+import re
+
+# from pltui.app import PulumiTUI
+from pltui.utils import ApplicationGlobals
+
+from .service import PulumiService
+
+
+def _main() -> None:
+    print(PulumiService().get_state().name)
+
+
+def main() -> None:
+    result = None
+    try:
+        # app = PulumiTUI()
+        # result = app.run()
+        print(PulumiService().get_state().name)
+    finally:
+        pass
+        # if app.return_code > 0:
+        #     ApplicationGlobals.successful_termination = False
+
+    if result is not None:
+        print(result)
+    if not ApplicationGlobals.successful_termination:
+        error_message = re.sub(
+            r"(?<=[/\\])[^\s/\\]+(?=[/\\])",
+            "***",
+            app.error_message or str(result).strip(),
+        ).split("\n")
+        print(error_message)
+
+
+if __name__ == "__main__":
+    _main()
