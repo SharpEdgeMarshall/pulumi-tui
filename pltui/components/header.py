@@ -6,7 +6,7 @@ from textual.reactive import reactive
 from textual.widgets import Select, Static
 
 try:
-    APP_VERSION = version("pltui")
+    APP_VERSION = version("pulumi-tui")
 except PackageNotFoundError:
     APP_VERSION = "dev"
 
@@ -54,9 +54,7 @@ class AppHeader(Vertical):
     def _render_project_name(self, project_name: str | None) -> None:
         if not self.is_mounted:
             return
-        self.query_one("#header-project", Static).update(
-            project_name or "-"
-        )
+        self.query_one("#header-project", Static).update(project_name or "-")
 
     def _render_stack_name(self, stack_name: str | None) -> None:
         if not self.is_mounted:
@@ -71,6 +69,4 @@ class AppHeader(Vertical):
             [(stack, stack) for stack in stacks] or [("No stacks available", "")]
         )
         selector.disabled = not stacks
-        selector.value = (
-            current if current in stacks else stacks[0] if stacks else ""
-        )
+        selector.value = current if current in stacks else stacks[0] if stacks else ""

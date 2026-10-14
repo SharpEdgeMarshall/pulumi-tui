@@ -18,7 +18,6 @@ from pltui.theme import PULUMI_SOFT_THEME, PULUMI_THEME
 
 
 class PulumiTUI(App):
-
     CSS_PATH = "ui.tcss"
     COMMAND_PALETTE_BINDING = "ctrl+backslash"
     BINDINGS = [
@@ -95,8 +94,9 @@ class PulumiTUI(App):
     # Resources compare by URN only, so a reloaded state would look unchanged.
     state: reactive[Optional[PulumiStack]] = reactive(None, always_update=True)
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, project_dir: str | None = None, **kwargs) -> None:
         super().__init__(**kwargs)
+        self.project_dir = project_dir or os.getcwd()
         self.register_theme(PULUMI_THEME)
         self.register_theme(PULUMI_SOFT_THEME)
         self.theme = PULUMI_THEME.name
@@ -112,15 +112,14 @@ class PulumiTUI(App):
         self.action_reload_stacks()
 
     def _initialize_service(self) -> bool:
-        project_dir = os.getenv("PLTUI_PROJECT_DIR") or os.getcwd()
         try:
-            self.pulumi_service.setup(project_dir)
+            self.pulumi_service.setup(self.project_dir)
             project_name = self.pulumi_service.project_name
         except Exception as exc:
             self.query_one(AppFooter).set_status("Workspace unavailable")
             self.notify(
-                f"Cannot load Pulumi project at {project_dir}: {exc!s}. "
-                "Set PLTUI_PROJECT_DIR to a Pulumi project and use Ctrl+R to retry.",
+                f"Cannot load Pulumi project at {self.project_dir}: {exc!s}. "
+                "Use -C/--cwd to choose a Pulumi project and Ctrl+R to retry.",
                 title="Workspace unavailable",
                 severity="error",
                 markup=False,

@@ -1,0 +1,35 @@
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+template: |
+  ## Changes
+
+  $CHANGES
+change-template: "- $TITLE (#$NUMBER) $AUTHORS"
+change-title-escapes: '\<*_&'
+categories:
+  - title: "Features"
+    semver-increment: minor
+    when:
+      labels: [feature, enhancement]
+  - title: "Fixes"
+    when:
+      labels: [fix, bug]
+  - title: "Maintenance"
+    when:
+      labels: [chore, dependencies, documentation]
+  - type: pre-exclude
+    when:
+      label: skip-changelog
+  - type: version-resolver
+    semver-increment: major
+    when:
+      label: major
+  - type: version-resolver
+    semver-increment: patch
+autolabeler:
+  - labels: [feature]
+    title: ["/^feat/i"]
+  - labels: [fix]
+    title: ["/^fix/i"]
+  - labels: [chore]
+    title: ["/^(chore|ci|docs|refactor)/i"]

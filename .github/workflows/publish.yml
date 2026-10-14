@@ -1,0 +1,33 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    uses: ./.github/workflows/test.yml
+
+  publish:
+    name: Publish to PyPI
+    needs: test
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write # PyPI trusted publishing
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - name: Verify the release tag matches the built version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version="$(basename dist/*.whl | cut -d- -f2)"
+          test "v$version" = "$TAG" || { echo "Tag $TAG does not match built version $version"; exit 1; }
+      - uses: pypa/gh-action-pypi-publish@release/v1

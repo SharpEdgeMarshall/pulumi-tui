@@ -181,7 +181,6 @@ class StateSearchInput(Input):
 
 
 class StateTree(Tree[PulumiResource]):
-
     BINDINGS = [
         Binding("space", "toggle_resource", "Select"),
         Binding("e", "expand_cursor", "Expand/collapse resource"),
@@ -297,12 +296,11 @@ class StateTree(Tree[PulumiResource]):
         super().action_toggle_node()
 
     def _resource_label(self, resource: PulumiResource) -> Text:
-        label = f"{resource.type} ({resource.name})"
+        text = Text(f"{resource.type} ({resource.name})")
         if resource.protect:
             lock = self.app.get_css_variables()["secondary"].removeprefix("ansi_")
-            label = Text.assemble(label, (" 🔒", lock))
-        else:
-            label = Text(label)
+            text.append(" 🔒", style=lock)
+        label = text
         if not self.selecting:
             return label
         if not self._matches_filters(
@@ -416,7 +414,6 @@ class StateTree(Tree[PulumiResource]):
 
 
 class StateInspector(Vertical):
-
     BINDINGS = [
         Binding("a", "select_all", "Select all"),
         Binding("d", "deselect_all", "Deselect all"),

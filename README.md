@@ -30,15 +30,15 @@
 
 ### As a command (recommended)
 
-Install `pltui` as a standalone command in its own isolated environment, using [pipx](https://pipx.pypa.io) or [uv](https://docs.astral.sh/uv/):
+Install `pulumi-tui` (which provides the `pltui` command) in its own isolated environment, using [pipx](https://pipx.pypa.io) or [uv](https://docs.astral.sh/uv/):
 
 ```bash
-pipx install git+https://github.com/SharpEdgeMarshall/pulumi-tui.git
+pipx install pulumi-tui
 # or
-uv tool install git+https://github.com/SharpEdgeMarshall/pulumi-tui.git
+uv tool install pulumi-tui
 ```
 
-Upgrade with `pipx upgrade pltui` or `uv tool upgrade pltui`. To try it without installing, run `uvx --from git+https://github.com/SharpEdgeMarshall/pulumi-tui.git pltui`.
+Upgrade with `pipx upgrade pulumi-tui` or `uv tool upgrade pulumi-tui`. To try it without installing, run `uvx --from pulumi-tui pltui`.
 
 ### From source
 
@@ -59,16 +59,16 @@ cd path/to/your/pulumi-project
 pltui
 
 # or
-PLTUI_PROJECT_DIR=path/to/your/pulumi-project pltui
+pltui -C path/to/your/pulumi-project
 ```
-
-When running from a source checkout, prefix the command with `poetry run`.
 
 Choose a stack with the dropdown in the header, then explore its resources.
 
-| Variable | Description |
+| Option | Description |
 |---|---|
-| `PLTUI_PROJECT_DIR` | Pulumi project directory to load. Defaults to the current directory. |
+| `-C`, `--cwd` | Run as if started in this Pulumi project directory, like `pulumi -C`. Defaults to the current directory. |
+| `-V`, `--version` | Show the version and exit. |
+| `-h`, `--help` | Show the help and exit. |
 
 
 ### Keybindings
@@ -106,16 +106,6 @@ Choose a stack with the dropdown in the header, then explore its resources.
 | `Esc` | Cancel or close |
 
 
-### How actions work
-
-- Preview, up, refresh and destroy target the selected resources, or the whole stack when nothing is selected.
-- Up, refresh and destroy preview first and apply only after you confirm. Output streams live in a modal.
-- The stack can't be locked, so PLTUI fingerprints the state before the preview and blocks apply if it changed.
-- State delete, protect and unprotect need a selection, ask for confirmation and have no preview.
-- The state reloads after every successful mutating action.
-
-> Protecting a resource edits the stack state only. Unless your program also sets the `protect` resource option, the next `pulumi up` resets it.
-
 ### Resource selection
 
 Select all and Deselect all affect only resources matching the current filters, including matches in collapsed branches. Parents shown only for context are not selected. Selections hidden by filters stay selected and are counted in the title.
@@ -134,47 +124,14 @@ poetry run pulumi -C examples/local stack init dev
 poetry run pulumi -C examples/local up --yes
 poetry run pulumi -C examples/local stack init sandbox
 poetry run pulumi -C examples/local up --yes
-PLTUI_PROJECT_DIR="$PWD/examples/local" poetry run pltui
+poetry run pltui -C examples/local
 ```
 
 The empty passphrase is only for this non-sensitive example. Backend files and stack configuration are ignored by Git. Run `stack init` once per stack; afterwards use `stack select dev` or `stack select sandbox` before `up`.
 
 ## Contributing
 
-Contributions are welcome.
-
-1. Fork the repository and create a branch.
-2. Install dependencies with `poetry install`.
-3. Use the local example project above as a test bench.
-4. Make your change and open a pull request describing what and why.
-
-### Project layout
-
-| Path | Contents |
-|---|---|
-| `pltui/app.py` | App, key bindings and action flow |
-| `pltui/service.py` | Pulumi Automation API and CLI wrapper |
-| `pltui/models.py` | Pydantic models of the exported state |
-| `pltui/selection.py` | Resource selection model |
-| `pltui/components/` | Header, footer, state tree/inspector and modals |
-| `pltui/theme.py`, `pltui/ui.tcss` | Themes and styling |
-| `examples/local` | Local Pulumi project for development |
-
-### Conventions
-
-- Use Textual's standard semantic theme variables (such as `$primary`, `$error`, and `$background`) instead of hardcoded colours.
-- Keep theme-specific styling in `pltui/theme.py`; avoid app-specific theme-variable aliases so built-in Textual themes remain compatible.
-- Rely on Textual's `Footer` for key hints, and keep buttons and shortcuts consistent.
-- Format with `ruff` and type-check with `mypy` (both are dev dependencies):
-
-```bash
-poetry run ruff check .
-poetry run mypy pltui
-```
-
-### Refreshing the preview image
-
-`docs/preview.svg` is a Textual screenshot, exported with `app.save_screenshot()` from a headless `run_test` session against `examples/local`.
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, project layout and conventions.
 
 ## License
 

@@ -258,7 +258,7 @@ version = "8.5.0"
 description = "Composable command line interface toolkit"
 optional = false
 python-versions = ">=3.10"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "click-8.5.0-py3-none-any.whl", hash = "sha256:255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360"},
     {file = "click-8.5.0.tar.gz", hash = "sha256:ba0d2089de75ea0310e2dde03160e6ca10009947fb95a182f9b54021bb272e34"},
@@ -2432,5 +2432,5 @@ propcache = ">=0.2.1"
 
 [metadata]
 lock-version = "2.1"
-python-versions = "^3.11"
-content-hash = "cbe6b2753ce22e8650c34a1fd8f8c7bbc74ed587d34adfd3d1641afc8c871643"
+python-versions = ">=3.11,<4.0"
+content-hash = "021a10708f16f8ebfe24560c9d39f0221862b918ffc866c05ae11d854423bd51"

@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class PulumiResource(BaseModel):
-
     urn: str
     type: str
     id: Optional[str] = None
@@ -51,7 +50,6 @@ class PulumiResource(BaseModel):
 
 
 class PulumiStack(BaseModel):
-
     name: str
     root_resources: list[PulumiResource]
     stack_resource: Optional[PulumiResource] = None
