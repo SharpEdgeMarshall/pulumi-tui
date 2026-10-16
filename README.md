@@ -10,7 +10,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/SharpEdgeMarshall/pulumi-tui/test.yml?style=for-the-badge
 )](https://github.com/SharpEdgeMarshall/pulumi-tui/actions/workflows/test.yml)
 ![License](https://img.shields.io/github/license/SharpEdgeMarshall/pulumi-tui?style=for-the-badge)
-<!-- ![PyPI - Downloads](https://img.shields.io/pypi/dm/pulumi-tui?style=for-the-badge) -->
+![PyPI - Downloads](https://img.shields.io/pypi/dw/pulumi-tui?style=for-the-badge)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/SharpEdgeMarshall/pulumi-tui/main/docs/preview.svg" alt="PLTUI previewing a Pulumi stack" width="100%">
