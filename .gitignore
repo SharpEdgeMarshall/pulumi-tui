@@ -211,3 +211,6 @@ state.json
 examples/local/.pulumi-state/
 examples/local/.pulumi-home/
 examples/local/Pulumi.*.yaml
+
+# MacOS
+.DS_Store

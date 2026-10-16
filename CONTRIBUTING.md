@@ -34,4 +34,4 @@ Release notes are drafted automatically from merged pull requests. Titles starti
 
 ## Refreshing the preview image
 
-`docs/preview.svg` is a Textual screenshot, exported with `app.save_screenshot()` from a headless `run_test` session against `examples/local`.
+The files in `docs/screenshots/` are Textual screenshots, exported with `app.save_screenshot()` from a headless `run_test` session against `examples/local`.

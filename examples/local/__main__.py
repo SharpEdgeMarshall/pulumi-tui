@@ -21,7 +21,7 @@ class Service(pulumi.ComponentResource):
 
 
 stack = pulumi.get_stack()
-replicas = 30 if stack == "dev" else 1
+replicas = 5 if stack == "dev" else 1
 application = pulumi.ComponentResource("pltui:demo:Application", f"{stack}-application")
 Service(f"{stack}-api", application, replicas)
 Service(f"{stack}-worker", application, replicas)

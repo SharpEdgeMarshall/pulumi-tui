@@ -13,8 +13,10 @@
 ![PyPI - Downloads](https://img.shields.io/pypi/dw/pulumi-tui?style=for-the-badge)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/SharpEdgeMarshall/pulumi-tui/main/docs/preview.svg" alt="PLTUI previewing a Pulumi stack" width="100%">
+  <img src="https://raw.githubusercontent.com/SharpEdgeMarshall/pulumi-tui/main/docs/screenshots/overview.gif" alt="PLTUI browsing, filtering and previewing changes on a Pulumi stack" width="100%">
 </p>
+
+See more in the [screenshot gallery](https://github.com/SharpEdgeMarshall/pulumi-tui/blob/main/docs/SCREENSHOTS.md).
 
 ## Features
 
