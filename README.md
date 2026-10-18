@@ -35,6 +35,7 @@ The package `pulumi-tui` provides the `pltui` command.
 
 | Tool   | Install                    | Upgrade                       | Run                                      |
 | ------ | -------------------------- | ----------------------------- | ---------------------------------------- |
+| Homebrew | `brew install SharpEdgeMarshall/tap/pulumi-tui` | `brew upgrade SharpEdgeMarshall/tap/pulumi-tui` | `cd /path/to/pulumi/project && pltui` |
 | pipx   | `pipx install pulumi-tui`  | `pipx upgrade pulumi-tui`     | `cd /path/to/pulumi/project && pltui`    |
 | uv     | `uv tool install pulumi-tui` | `uv tool upgrade pulumi-tui` | `cd /path/to/pulumi/project && pltui`    |
 | uvx    | none (no install needed)   | n/a                           | `uvx --from pulumi-tui pltui`            |
