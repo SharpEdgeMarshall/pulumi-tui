@@ -35,7 +35,7 @@ jobs:
           test "v$version" = "$TAG" || { echo "Tag $TAG does not match built version $version"; exit 1; }
       - name: Upload Release Asset
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload ${{ github.event.release.tag_name }} dist/*
       - uses: pypa/gh-action-pypi-publish@release/v1
